@@ -1,142 +1,140 @@
+//implementation of TRIE
 #include<bits/stdc++.h>
+
 using namespace std;
-struct trienode
-{
-    bool isleaf;
-    trienode* children[26];
+
+const int ALPHABET_SIZE=26;
+
+struct trienode{
+    struct trienode* children[ALPHABET_SIZE];
+    bool endofword;
 };
-trienode* root=NULL;
-int chartoint(char ch)
+
+struct trienode* getNode(void)
 {
-    int x=ch-'0'-49;
+    struct trienode* temp = new trienode;
+
+    temp->endofword=false;
+
+    for(int i=0;i<ALPHABET_SIZE; i++)
+    {
+        temp->children[i]=NULL;
+    }
+    return temp;
 }
-trienode* getNode(void)
+
+
+void insert_(struct trienode* root, string word)
 {
- trienode *temp=NULL;
- temp=(trienode*)malloc(sizeof(struct trienode));
- (*temp).isleaf=false;
- for(int i=0;i<26;i++)
- {
-     temp->children[i]=NULL;
- }
- return temp;
-}
-void insert1(string word,trienode* root)
-{
-    trienode* current=root;
+    struct trienode* current = root;
+
     for(int i=0;i<word.length();i++)
     {
-     int index=chartoint(word[i]);
-     if(current->children[index]==NULL)
-     {
-      trienode* newNode=getNode();
-      current->children[index]=newNode;
-     }
-     current=current->children[index];
-    }
-    current->isleaf=true;
-}
-void InsertRecursive(trienode* current,string word ,int index)
-{
-    if(index==word.length())
-    {
-        current->isleaf=true;
-        return;
-    }
-    //if its not the last char then check whether it is present in the current's children or not
-    int i=chartoint(word[index]);
-    if(current->children[i]==NULL){
-      trienode* temp=getNode();
-      current->children[i]=temp;
-    }
-    InsertRecursive(current->children[i],word,index+1);
-}
-bool searchWord(string word,trienode* root)
-{
-    trienode* current=root;
-    for(int i=0;i<word.length();i++)
-    {
-        int index=chartoint(word[i]);
+        int index= (int)word[i]-(int)'a';
         if(current->children[index]==NULL)
-          return false;
+            current->children[index]=getNode();
         current=current->children[index];
     }
-    return current->isleaf;
+    current->endofword= true;
 }
-bool searchRecursive(trienode* current,string word,int index)
-{
- if(index==word.length())
- {
-     return current->isleaf;
- }
- int i=chartoint(word[index]);
- if(current->children[i]==NULL)
-    return false;
- searchRecursive(current->children[i],word,index++);
-}
-bool DeleteNode(trienode* current,string word,int index)
-{
-    //we search for the node and change the isleaf to false
-    //if the size becomes zero the delete recursively
-    if(index==word.length())
-    {
 
-        if(current->isleaf==false)
-            return false;
-        current->isleaf=false;
-        int size1=0;
-        for(int i=0;i<26;i++)
-        {
-            if(current->children[i]!=NULL)
-                size1++;
-        }
-        return size1==0;
-     }
-     int i=chartoint(word[index]);
-     if(current->children[i]==NULL)
-        return false;
-     bool shouldDeleteCurrentNode=DeleteNode(current->children[i],word,index+1);
-     if(shouldDeleteCurrentNode)
-     {
-         current->children[i]=NULL;
-         //after we delete the current node we check if the node has any children
-         //If not then we return true so that this node can also be deleted
-         int s=0;
-         for(int i=0;i<26;i++)
-         {
-             if(current->children[i]!=NULL)
-                s++;
-         }
-         if(s==0)
-            return true;
-     }
-     return false;
-}
-int main()
+bool search_(struct trienode* root, string key)
 {
-    root=getNode();
-    string st;
-    for(int i=0;i<=5;i++)
+    struct trienode *current= root;
+    for(int i=0;i<key.length();i++)
     {
-        printf("Enter a string:");
-        getline(cin,st);
-        if(i%2==0)
-          insert1(st,root);
-        else
-          InsertRecursive(root,st,0);
+        int index=(int)key[i]-(int)'a';
+        if(current->children[index]==NULL)
+            return false;
+        current=current->children[index];
     }
-    int t=3;
-    while(t--){
-    printf("Enter a string to be searched:");
-    cin>>st;
-    bool answer=searchWord(st,root);
-    if(answer)
-        cout<<"ELEMENT FOUND"<<endl;
+    return current->endofword;
+}
+
+
+bool isNodeEmpty(struct trienode* root)
+{
+    for(int i=0;i<26;i++)
+    {
+       if(root->children[i])
+            return false;
+    }
+    return true;
+}
+trienode* deleteNode(struct trienode* root, string key, int depth)
+{
+    //if the trie is empty
+    if(!root)
+        return NULL;
+    //if the recursion is at the end of the
+    if(depth==key.length())
+    {
+        if(root->endofword==false)
+            return NULL;
+        root->endofword=false;
+
+        if(isNodeEmpty(root))
+        {
+            delete(root);
+            root=NULL;
+        }
+        return root;
+    }
+
+    int index= key[depth]-(int)'a';
+    if(root->children[index])
+    {
+        root->children[index]=deleteNode(root->children[index], key, depth+1);
+        if(isNodeEmpty(root) && root->endofword == false)
+        {
+            delete(root);
+            root=NULL;
+        }
+    }
     else
-        cout<<"NOT FOUND!!"<<endl;
-    printf("Enter element to be deleted:");
-    cin>>st;
-    DeleteNode(root,st,0);
+        return NULL;
+    return root;
+}
+
+int main(void)
+{
+    int t=10;
+    struct trienode *root = getNode();
+    while(t--)
+    {
+        printf("Enter word: ");
+        string st;
+        cin>>st;
+        insert_(root, st);
+    }
+    printf("Choose Anyone!\n");
+    while(true)
+    {
+        printf("1. Search\n2.Delete\n3.Exit\n");
+        int choice;
+        scanf("%d", &choice);
+
+
+    if(choice==1){
+        string st;
+        printf("Enter key to be searched: ");
+        cin>>st;
+        bool ans = search_(root, st);
+        if(ans)
+            cout<<"Element Found!"<<endl;
+        else
+            cout<<"Element Not Found!"<<endl;
+    }
+    else if(choice==2){
+        string str;
+        printf("Enter element to be deleted: ");
+        cin>>str;
+        root=deleteNode(root, str, 0);
+    }
+    else if(choice==3)
+        exit(0);
+
+
     }
     return 0;
 }
